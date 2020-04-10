@@ -5,6 +5,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 #------------------------------------------------------------------------------
+import gc
+
 import pytest
 
 from enaml.signaling import Signal, BoundSignal
@@ -30,8 +32,23 @@ def test_signal_lifetime():
 
     """
     s = SignalTester()
-    assert isinstance(s.signal, BoundSignal)
-    s.signal.connect(s.slot)
+    bs1 = s.signal
+    del bs1
+    gc.collect()
+    bs2 = s.signal
+    # assert bs1 is not bs2
+    # assert isinstance(bs1, BoundSignal)
+
+    def a(*args, **kwargs):
+        pass
+
+    # bs1.connect(a)
+    bs2.connect(a)
+    s.signal.connect(a)
+    bs2.emit(1, 2, 3, a=1, b=2)
+    # bs2.connect(a)
+    # bs1.connect(s.slot)
+    # bs2.connect(a)
 
     # s.signal.emit(1, 2, 3, a=1, b=2)
     # assert s.counter == 1
@@ -68,7 +85,7 @@ def test_signal_disconnect_all():
     # assert c == 1
 
     SignalTester.signal.disconnect_all(s)
-    # s.emit()
+    # s.signal.emit()
     # assert s.counter == 2
     # assert c == 1
 
@@ -84,22 +101,22 @@ def test_signal_bad_creation():
         Signal(a=1)
 
 
-# def test_signal_set_del():
-#     """Test setting/deleting a signal
+def test_signal_set_del():
+    """Test setting/deleting a signal
 
-#     """
-#     s = Signal()
-#     with pytest.raises(AttributeError):
-#         s.signal = 1
+    """
+    s = Signal()
+    with pytest.raises(AttributeError):
+        s.signal = 1
 
-#     s = SignalTester()
-#     s.signal.connect(s.slot)
-#     s.signal(4, 5, c=5, h=6)
-#     assert s.counter == 1
+    s = SignalTester()
+    s.signal.connect(s.slot)
+    # s.signal(4, 5, c=5, h=6)
+    # assert s.counter == 1
 
-#     del s.signal
-#     s.emit()
-#     assert s.counter == 1
+    del s.signal
+    # s.emit()
+    # assert s.counter == 1
 
 
 def test_bound_signal_comparison():

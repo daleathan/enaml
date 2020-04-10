@@ -88,14 +88,16 @@ static PyObject* WeakMethod;
 static PyObject* CallableRef;
 
 
-inline bool load_obj_dict( cppy::ptr& objptr, cppy::ptr& out, bool forcecreate=false )
+inline bool load_obj_dict( cppy::ptr objptr, cppy::ptr& out, bool forcecreate=false )
 {
     PyObject** dict = _PyObject_GetDictPtr( objptr.get() );
     if( !dict )
         return false;
     if( forcecreate && !*dict )
+    {
         *dict = PyDict_New();
-    out = cppy::ptr( cppy::incref( *dict ) );
+    }
+    out = cppy::ptr( cppy::xincref( *dict ) );
     return true;
 }
 
@@ -161,10 +163,14 @@ Signal__get__( PyObject* self, PyObject* obj, PyObject* type )
 {
     cppy::ptr selfptr( cppy::incref( self ) );
     if( !obj )
+    {
         return selfptr.release();
+    }
     cppy::ptr objref( PyWeakref_NewRef( obj, 0 ) );
     if( !objref )
+    {
         return 0;
+    }
     cppy::ptr boundsig( BoundSignal::New( self, objref.get() ) );
     if( !boundsig )
         return 0;
@@ -188,6 +194,7 @@ Signal__set__( Signal* self, PyObject* obj, PyObject* value )
         cppy::attribute_error( objptr.get(), "__dict__" );
         return -1;
     }
+    // In the absence of a dictionary instance there is nothing to do.
     if( !dict )
         return 0;
 
@@ -226,9 +233,10 @@ Signal_disconnect_all( PyObject* ignored, PyObject* obj )
     {
         return cppy::attribute_error( obj, "__dict__" );
     }
+    // In the absence of a dictionary instance there is nothing to do.
     if( !dict )
     {
-        return 0;
+        Py_RETURN_NONE;
     }
     cppy::ptr key( cppy::incref( SignalsKey ) );
     if( PyDict_GetItem( dict.get(), key.get() ) )
@@ -503,7 +511,9 @@ _Disconnector::New( PyObject* owner, PyObject* objref )
     cppy::ptr objrefptr( cppy::incref( objref ) );
     cppy::ptr self( PyType_GenericAlloc( _Disconnector::TypeObject, 0 ) );
     if( !self )
+    {
         return 0;
+    }
     _Disconnector* disc = reinterpret_cast<_Disconnector*>( self.get() );
     disc->owner = ownerptr.release();
     disc->objref = objrefptr.release();
@@ -561,9 +571,13 @@ BoundSignal_dealloc( BoundSignal* self )
     PyObject_GC_UnTrack( self );
     BoundSignal_clear( self );
     if( numfree < FREELIST_MAX )
+    {
         freelist[ numfree++ ] = self;
+    }
     else
+    {
         Py_TYPE(self)->tp_free( pyobject_cast( self ) );
+    }
 }
 
 
@@ -673,7 +687,7 @@ BoundSignal_call( BoundSignal* self, PyObject* args, PyObject* kwargs )
     return BoundSignal_emit( self, args, kwargs );
 }
 
-
+// XXX fix first !
 PyObject*
 BoundSignal_connect( BoundSignal* self, PyObject* slot )
 {
@@ -749,7 +763,6 @@ BoundSignal_connect( BoundSignal* self, PyObject* slot )
         {
             return 0;
         }
-        disc.release();
     }
 
     cppy::ptr slotptr( cppy::incref( slot ) );
@@ -912,7 +925,9 @@ BoundSignal::New( PyObject* owner, PyObject* objref )
     {
         bsigptr = PyType_GenericAlloc( BoundSignal::TypeObject, 0 );
         if( !bsigptr )
+        {
             return 0;
+        }
     }
     BoundSignal* bsig = reinterpret_cast<BoundSignal*>( bsigptr.get() );
     bsig->owner = ownerptr.release();

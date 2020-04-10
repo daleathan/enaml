@@ -78,10 +78,6 @@ WeakMethod_new( PyTypeObject* type, PyObject* args, PyObject* kwargs )
     cppy::ptr self( cppy::incref( PyMethod_GET_SELF( method.get() ) ) );
     cppy::ptr cls( pyobject_cast( Py_TYPE(self.get() ) ) );
     cppy::ptr func( cppy::incref( PyMethod_GET_FUNCTION( method.get() ) ) );
-    if( !self )
-    {
-        return cppy::type_error( "Expected a bound method. Got unbound method instead." );
-    }
 
     /* The logic to setup the weakref is as follows:
 
