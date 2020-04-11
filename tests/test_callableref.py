@@ -11,13 +11,13 @@ from weakref import ref
 import pytest
 
 from enaml.callableref import CallableRef
-
+from enaml.weakmethod import WeakMethod
 
 class CObj:
     def __init__(self):
         self.counter = 0
-        self.last_args = ()
-        self.last_kwargs = {}
+        self.last_args = None
+        self.last_kwargs = None
 
     def __call__(self, *args, **kwargs):
         self.counter += 1
@@ -40,6 +40,50 @@ def test_callableref_lifetime():
     del obj
     gc.collect()
     assert cr() is None
+
+
+def test_callableref_call():
+    """Test calling a callable ref with different args/kwargs.
+
+    """
+    obj = CObj()
+    cr = CallableRef(obj)
+    cr()
+    assert obj.counter == 1
+    assert obj.last_args == ()
+    assert obj.last_kwargs == {}
+
+    cr(1, 2)
+    assert obj.counter == 2
+    assert obj.last_args == (1, 2)
+    assert obj.last_kwargs == {}
+
+    cr(a=1, b=2)
+    assert obj.counter == 3
+    assert obj.last_args == ()
+    assert obj.last_kwargs == dict(a=1, b=2)
+
+
+def test_callableref_call_weakmethod():
+    """Test calling a callable ref with different args/kwargs.
+
+    """
+    obj = CObj()
+    cr = CallableRef(WeakMethod(obj.__call__))
+    cr()
+    assert obj.counter == 1
+    assert obj.last_args == ()
+    assert obj.last_kwargs == {}
+
+    cr(1, 2)
+    assert obj.counter == 2
+    assert obj.last_args == (1, 2)
+    assert obj.last_kwargs == {}
+
+    cr(a=1, b=2)
+    assert obj.counter == 3
+    assert obj.last_args == ()
+    assert obj.last_kwargs == dict(a=1, b=2)
 
 
 def test_callableref_callback():

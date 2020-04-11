@@ -60,7 +60,7 @@ WeakMethod_new( PyTypeObject* type, PyObject* args, PyObject* kwargs )
         return cppy::type_error( ostr.str().c_str() );
     }
 
-    cppy::ptr argsptr( cppy::xincref( args ) );
+    cppy::ptr argsptr( cppy::incref( args ) );
     if( PyTuple_Size( argsptr.get() ) != 1 )
     {
         std::ostringstream ostr;
@@ -229,7 +229,7 @@ WeakMethod_call( WeakMethod* self, PyObject* args, PyObject* kwargs )
         return 0;
     }
     cppy::ptr argsptr( cppy::incref( args ) );
-    cppy::ptr kwargsptr( cppy::incref( kwargs ) );
+    cppy::ptr kwargsptr( cppy::xincref( kwargs ) );
     return method.call( argsptr, kwargsptr );
 }
 

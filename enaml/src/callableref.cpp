@@ -101,7 +101,7 @@ CallableRef_call( CallableRef* self, PyObject* args, PyObject* kwargs )
         Py_RETURN_NONE;
     }
     cppy::ptr argsptr( cppy::incref( args ) );
-    cppy::ptr kwargsptr( cppy::incref( kwargs ) );
+    cppy::ptr kwargsptr( cppy::xincref( kwargs ) );
     return objptr.call( argsptr, kwargsptr );
 }
 
